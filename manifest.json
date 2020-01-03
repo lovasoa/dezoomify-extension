@@ -4,13 +4,17 @@
     "version": "0.1",
     "description": "Detect zoomable images in web pages and downloading them with dezoomify",
     "icons": {
-        "24": "icons/icon-small.png",
-        "48": "icons/icon.svg",
-        "96": "icons/icon.svg"
+        "24": "icons/icon-24.png",
+        "96": "icons/icon-96.png",
+        "128": "icons/icon.svg"
     },
     "page_action": {
         "browser_style": true,
-        "default_icon": "icons/icon.svg",
+        "default_icon": {
+            "24": "icons/icon-24.png",
+            "96": "icons/icon-96.png",
+            "128": "icons/icon.svg"
+        },
         "default_title": "Dezoomify"
     },
     "permissions": [
