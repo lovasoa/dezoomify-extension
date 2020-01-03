@@ -1,0 +1,32 @@
+{
+    "manifest_version": 2,
+    "name": "Dezoomify",
+    "version": "0.1",
+    "description": "Detect zoomable images in web pages and downloading them with dezoomify",
+    "icons": {
+        "24": "icons/icon-small.png",
+        "48": "icons/icon.svg",
+        "96": "icons/icon.svg"
+    },
+    "page_action": {
+        "browser_style": true,
+        "default_icon": "icons/icon.svg",
+        "default_title": "Dezoomify"
+    },
+    "permissions": [
+        "https://*/*",
+        "http://*/*",
+        "webRequest",
+        "webNavigation"
+    ],
+    "background": {
+        "scripts": [
+            "background.js"
+        ]
+    },
+    "applications": {
+        "gecko": {
+            "strict_min_version": "57.0a1"
+        }
+    }
+}
