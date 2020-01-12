@@ -87,8 +87,7 @@ function openDezoomify(request) {
 }
 
 chrome.pageAction.onClicked.addListener(async function handleIconClick(tab) {
-    if (tab.id == null) return;
-    const found = found_images.get(tab.id);
+    const found = tab.id && found_images.get(tab.id);
     if (!found || found.size == 0) {
         throw new Error(`Dezoomify icon clicked on a tab (${tab.id}) without any zoomable images (${found}).`);
     }
