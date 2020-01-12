@@ -1,5 +1,6 @@
 const META_REGEX = /\/ImageProperties.xml|\/info.json|\?FIF=|\.dzi$|\.img.\?cmd=info|\.pff$|\.ecw$|artsandculture\.google\.com\/asset\/|\/tiles/i;
 const DEZOOMIFY_URL = "https://ophir.alwaysdata.net/dezoomify/dezoomify.html#";
+const MIN_REQUEST_TIME = 1000; // Minimum amount of time to keep a request in cache (ms)
 
 /**
  * A network request
@@ -52,6 +53,8 @@ chrome.webRequest.onCompleted.addListener(function handleRequest(request) {
 
 /**
  * Delete old zoomable images found for a tab
+ * This deletes only requests that are older than MIN_REQUEST_TIME,
+ * so that if a page loads and then quickly changes its adress, its requests are not lost.
  * @param {WebRequest} request 
  */
 function deleteSavedImages({ tabId }) {
@@ -59,7 +62,7 @@ function deleteSavedImages({ tabId }) {
     if (!found) return;
     const now = Date.now();
     for (const [url, request] of found) {
-        if (now - request.timeStamp >= 5000) {
+        if (now - request.timeStamp >= MIN_REQUEST_TIME) {
             found.delete(url);
         }
     }
