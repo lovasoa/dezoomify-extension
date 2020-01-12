@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
     "name": "Dezoomify",
-    "version": "0.1",
-    "description": "Detect zoomable images in web pages and downloading them with dezoomify",
+    "version": "0.2.0",
+    "description": "Detect zoomable images in web pages and download them with dezoomify",
     "icons": {
         "24": "icons/icon-24.png",
         "96": "icons/icon-96.png",
