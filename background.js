@@ -77,6 +77,13 @@ chrome.webNavigation.onBeforeNavigate.addListener(deleteSavedImages);
 chrome.webNavigation.onHistoryStateUpdated.addListener(deleteSavedImages);
 chrome.webNavigation.onReferenceFragmentUpdated.addListener(deleteSavedImages);
 
+// If the history is updated programmatically, we need to test the new URL
+chrome.webNavigation.onHistoryStateUpdated.addListener(function checkNewHistory({ tabId, url }) {
+    if (META_REGEX.test(url)) {
+        foundZoomableImage({ url, tabId, timeStamp: Date.now() });
+    }
+});
+
 /**
  * Open dezoomify in a tab
  * @param {WebRequest} request 
