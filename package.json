@@ -4,7 +4,8 @@
   "description": "Detect zoomable images in web pages and download them with dezoomify",
   "main": "background.js",
   "scripts": {
-    "test": "tsc"
+    "test": "tsc",
+    "build": "zip -r dezoomify.zip icons/ background.js manifest.json"
   },
   "repository": {
     "type": "git",
