@@ -1,4 +1,4 @@
-const META_REGEX = /\/ImageProperties.xml|\/info.json|\?FIF=|\.dzi$|\.img.\?cmd=info|\.pff$|\.ecw$|artsandculture\.google\.com\/asset\/|\/tiles/i;
+const META_REGEX = /\/ImageProperties.xml|\/info.json|\?FIF=|\.dzi$|\.img.\?cmd=info|\.pff(&requestType=1)?$|\.ecw$|artsandculture\.google\.com\/asset\/|\/tiles/i;
 const DEZOOMIFY_URL = "https://ophir.alwaysdata.net/dezoomify/dezoomify.html#";
 const MIN_REQUEST_TIME = 1000; // Minimum amount of time to keep a request in cache (ms)
 
