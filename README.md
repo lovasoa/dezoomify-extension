@@ -25,6 +25,11 @@ This browser addon requires the following permissions:
  - *Access browser activity during navigation* :
     needed to detect when you leave a webpage, so that the icon can be hidden and the older zoomable image information forgotten.
 
+## How to install
+You can install this extension from your browser's official plugin market :
+ - for Firefox, see [dezoomify on **Mozilla Addons**](https://addons.mozilla.org/en-US/firefox/addon/dezoomify/)
+ - for Chrome, see [dezoomify on the **Chrome Web Store**](https://chrome.google.com/webstore/detail/dezoomify/iapjjopjejpelnfdonefbffahmcndfbm)
+
 ## Free Software
 This addon is a free software (see [LICENSE](./LICENSE)).
 You can see its source code at: https://github.com/lovasoa/dezoomify-extension/
