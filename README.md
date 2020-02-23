@@ -11,8 +11,12 @@ and you'll be able to download the image.
 
 ## How does it work ?
 
-This browser add-on intercepts requests made by websites and searches zoomable images in them.
-When a zoomable image is found, it adds a small button in your address bar that allows you to download the image with dezoomify.
+When you click on the addon's icon (the magnifying glass), it reloads the current page
+while intercepting all network requests that match a certain pattern.
+
+When request to what looks like a zoomable image is found,
+it shows a little badge in your address bar, which you can click 
+to download the image with dezoomify.
 
 For more information about dezoomify, see: https://github.com/lovasoa/dezoomify
 
@@ -20,8 +24,6 @@ For more information about dezoomify, see: https://github.com/lovasoa/dezoomify
 
 This browser addon requires the following permissions:
 
- - *Access your data for all websites* :
-    needed to intercept web requests made by websites in order to search for zoomable image metadata.
  - *Access browser activity during navigation* :
     needed to detect when you leave a webpage, so that the icon can be hidden and the older zoomable image information forgotten.
 
