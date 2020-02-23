@@ -3,6 +3,7 @@ const META_REPLACE = [
     { pattern: /_files\/\d+\/\d+_\d+.jpg$/, replacement: '.dzi' },
     { pattern: /\/TileGroup\d+\/\d+-\d+-\d+.jpg$/, replacement: '/ImageProperties.xml' },
     { pattern: /\/ImageProperties\.xml\?t\w+$/, replacement: '/ImageProperties.xml' },
+    { pattern: /(artsandculture\.google\.com\/asset\/.+\/.+)\?.*/, replacement: '$1' },
 ];
 const DEZOOMIFY_URL = "https://ophir.alwaysdata.net/dezoomify/dezoomify.html#";
 const MIN_REQUEST_TIME = 1000; // Minimum amount of time to keep a request in cache (ms)
@@ -76,9 +77,7 @@ function deleteSavedImages({ tabId }) {
  */
 function pageChanged(newPage) {
     deleteSavedImages(newPage);
-    if (META_REGEX.test(newPage.url)) {
-        foundZoomableImage({ ...newPage, timeStamp: Date.now() });
-    }
+    handleRequest({ ...newPage, timeStamp: Date.now() });
 }
 
 /**
