@@ -9,6 +9,11 @@ and you'll be able to download the image.
 
 <img src="https://addons.cdn.mozilla.net/user-media/previews/full/230/230329.png?modified=1578086032" height=300 /> <img src="https://user-images.githubusercontent.com/552629/72672454-9afd9880-3a5a-11ea-958e-b262a615fa31.png" height=300 />
 
+## How to install
+You can install this extension from your browser's official plugin market :
+ - for Firefox, see [dezoomify on **Mozilla Addons**](https://addons.mozilla.org/en-US/firefox/addon/dezoomify/)
+ - for Chrome, see [dezoomify on the **Chrome Web Store**](https://chrome.google.com/webstore/detail/dezoomify/iapjjopjejpelnfdonefbffahmcndfbm)
+
 ## How does it work ?
 
 When you click on the addon's icon (the magnifying glass), it reloads the current page
@@ -26,11 +31,6 @@ This browser addon requires the following permissions:
 
  - *Access browser activity during navigation* :
     needed to detect when you leave a webpage, so that the icon can be hidden and the older zoomable image information forgotten.
-
-## How to install
-You can install this extension from your browser's official plugin market :
- - for Firefox, see [dezoomify on **Mozilla Addons**](https://addons.mozilla.org/en-US/firefox/addon/dezoomify/)
- - for Chrome, see [dezoomify on the **Chrome Web Store**](https://chrome.google.com/webstore/detail/dezoomify/iapjjopjejpelnfdonefbffahmcndfbm)
 
 ## Free Software
 This addon is a free software (see [LICENSE](./LICENSE)).
