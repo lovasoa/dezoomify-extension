@@ -23,4 +23,8 @@ jobs:
         npm run build --if-present
         npm test
       env:
-        CI: true
+        CI: true     
+    - uses: actions/upload-artifact@v1
+      with:
+        name: dezoomify.zip
+        path: ./dezoomify.zip
