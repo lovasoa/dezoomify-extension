@@ -1,194 +1,187 @@
+const DEZOOMIFY_URL = "https://ophir.alwaysdata.net/dezoomify/dezoomify.html#";
+
 const META_REGEX = /\/ImageProperties.xml|\/info.json|\?FIF=|\.dzi$|\.img.\?cmd=info|\.pff(&requestType=1)?$|\.ecw$|artsandculture\.google\.com\/asset\//i;
 const META_REPLACE = [
     { pattern: /_files\/\d+\/\d+_\d+.jpg$/, replacement: '.dzi' },
     { pattern: /\/TileGroup\d+\/\d+-\d+-\d+.jpg$/, replacement: '/ImageProperties.xml' },
     { pattern: /\/ImageProperties\.xml\?t\w+$/, replacement: '/ImageProperties.xml' },
-    { pattern: /(artsandculture\.google\.com\/asset\/.+\/.+)\?.*/, replacement: '$1' },
+    { pattern: /(http.*artsandculture\.google\.com\/asset\/.+\/.+)\?.*/, replacement: '$1' },
 ];
-const DEZOOMIFY_URL = "https://ophir.alwaysdata.net/dezoomify/dezoomify.html#";
-const MIN_REQUEST_TIME = 1000; // Minimum amount of time to keep a request in cache (ms)
-
-/**
- * A network request
- * @typedef {{url:string, tabId:number, timeStamp:number}} WebRequest
- */
-
-/**
- * Maps a tab id to a set of requests.
- * The requests are stored as a map from url to Request object.
- * @type Map<number, Map<string, WebRequest>>
- */
-const found_images = new Map;
-
-/**
- * Sets the extension's icon status
- * @param {number|undefined} tabId 
- * @param {'SEARCHING'|'SLEEPING'|undefined} status 
- * @param {number} found 
- */
-function setStatus(tabId, status, found) {
-    let badge = found || 0, title = '';
-    if (found > 1) {
-        title = `Found ${found} images. Click to open them.`
-    } else if (found === 1) {
-        title = "Found a zoomable image on this page. Click to open it.";
-    } else if (status === 'SEARCHING') {
-        title = 'Listening for zoomable image requests in this tab... ' +
-            'Zoom on your image and it should be detected.';
-    } else if (status === 'SLEEPING') {
-        title = 'Click to search for zoomable images in this page';
-    }
-    chrome.browserAction.setBadgeText({ text: (badge || '').toString(), tabId })
-    if (title) chrome.browserAction.setTitle({ title, tabId })
-}
-
-/**
- * Adds a request to the cached zoomable image requests
- * @param {WebRequest} request 
- */
-function foundZoomableImage(request) {
-    let found = found_images.get(request.tabId) || new Map;
-    found.set(request.url, request);
-    found_images.set(request.tabId, found);
-    setStatus(request.tabId, 'SEARCHING', found.size);
-}
-
 // @ts-ignore
 const VALID_RESOURCE_TYPES = new Set(Object.values(chrome.webRequest['ResourceType']));
 
 /**
- * @param {WebRequest} request 
+ * Selector for which requests we want to intercept
+ * @type chrome.webRequest.RequestFilter
  */
-function handleRequest(request) {
-    for (const { pattern, replacement } of META_REPLACE) {
-        request.url = request.url.replace(pattern, replacement);
-    }
-    if (META_REGEX.test(request.url) && !request.url.startsWith(DEZOOMIFY_URL)) {
-        foundZoomableImage(request);
-    }
+const REQUESTS_FILTER = {
+    urls: ["<all_urls>"],
+    // @ts-ignore
+    types: [
+        "main_frame",
+        "image",
+        "object",
+        "object_subrequest",
+        "sub_frame",
+        "xmlhttprequest",
+        "other"
+    ].filter(t => VALID_RESOURCE_TYPES.has(t))
 };
 
+/** @type {Map<number, PageListener>} */
+const page_listeners = new Map;
+
 /**
- * Delete old zoomable images found for a tab
- * This deletes only requests that are older than MIN_REQUEST_TIME,
- * so that if a page loads and then quickly changes its adress, its requests are not lost.
- * @param {{tabId:number}} request 
+ * Handle a click on the extension's icon
+ * @param {chrome.tabs.Tab} unchecked_tab 
  */
-function deleteSavedImages({ tabId }) {
-    const found = found_images.get(tabId);
-    if (!found) return;
-    const now = Date.now();
-    for (const [url, request] of found) {
-        if (now - request.timeStamp >= MIN_REQUEST_TIME) {
-            found.delete(url);
+function click(unchecked_tab) {
+    const tab = checkTab(unchecked_tab);
+    const listener = page_listeners.get(tab.id);
+    if (listener) {
+        // Open the images that may have been found, and stop the existing listener
+        listener.openFound();
+        listener.close();
+        page_listeners.delete(checkTab(listener.tab).id);
+    } else {
+        // No existing listener, start the extension for this tab
+        page_listeners.set(tab.id, new PageListener(tab));
+    }
+}
+
+chrome.browserAction.onClicked.addListener(click);
+
+/**
+ * Tracks the state of dezoomify on a given tab
+ */
+class PageListener {
+    /**
+     * @param {chrome.tabs.Tab} tab 
+     */
+    constructor(tab) {
+        this.listening = true;
+        this.tab = tab;
+        /** @type {Set<string>} */
+        this.found = new Set;
+        this.listener = this.handleRequest.bind(this);
+        const filter = { tabId: this.tab.id, ...REQUESTS_FILTER };
+        chrome.webRequest.onCompleted.addListener(this.listener, filter);
+        this.updateStatus();
+    }
+
+
+    close() {
+        chrome.webRequest.onCompleted.removeListener(this.listener);
+        this.listening = false;
+        this.found.clear();
+        this.updateStatus();
+    }
+
+    /**
+     * @param {chrome.webRequest.WebRequestDetails} request 
+     */
+    handleRequest(request) {
+        for (const { pattern, replacement } of META_REPLACE) {
+            request.url = request.url.replace(pattern, replacement);
+        }
+        if (META_REGEX.test(request.url) && !request.url.startsWith(DEZOOMIFY_URL)) {
+            this.foundZoomableImage(request);
         }
     }
-    if (found.size === 0) {
-        found_images.delete(tabId);
+
+    /**
+     * Adds a request to the cached zoomable image requests
+     * @param {chrome.webRequest.WebRequestDetails} request 
+     */
+    foundZoomableImage(request) {
+        this.found.add(request.url);
+        this.updateStatus();
     }
-    setStatus(tabId, undefined, found.size);
+
+    /**
+     * Sets the extension's icon status
+     */
+    updateStatus() {
+        const found = this.found.size;
+        const badge = (found || '').toString();
+        let title = '';
+        if (found > 1) {
+            title = `Found ${found} images. Click to open them.`
+        } else if (found === 1) {
+            title = "Found a zoomable image on this page. Click to open it.";
+        } else if (this.listening) {
+            title = 'Listening for zoomable image requests in this tab... ' +
+                'Zoom on your image and it should be detected.';
+        } else {
+            title = 'Click to search for zoomable images in this page';
+        }
+        const tabId = this.tab.id;
+        chrome.browserAction.setBadgeText({ text: badge, tabId });
+        chrome.browserAction.setTitle({ title, tabId });
+        const color = this.listening ? 'color' : 'grey';
+        chrome.browserAction.setIcon({
+            tabId,
+            path: [24, 96, 128, 512].reduce((obj, size) => {
+                // @ts-ignore
+                obj[size.toString()] = `icons/${color}/icon-${size}.png`;
+                return obj;
+            }, {})
+        });
+    }
+
+    openFound() {
+        for (const url of this.found) openDezoomify(url);
+    }
 }
 
-
-/**
- * If the history is updated programmatically, we need to test the new URL
- * @param {WebRequest} newPage 
- */
-function pageChanged(newPage) {
-    deleteSavedImages(newPage);
-    handleRequest({ ...newPage, timeStamp: Date.now() });
-}
 
 /**
  * Open dezoomify in a tab
- * @param {WebRequest} request 
+ * @param {string} image_url 
  */
-function openDezoomify(request) {
-    const url = DEZOOMIFY_URL + request.url;
+function openDezoomify(image_url) {
+    const url = DEZOOMIFY_URL + image_url;
     return chrome.tabs.create({ url })
 }
 
-chrome.webNavigation.onBeforeNavigate.addListener(deleteSavedImages);
-chrome.webNavigation.onReferenceFragmentUpdated.addListener(deleteSavedImages);
-chrome.webNavigation.onHistoryStateUpdated.addListener(pageChanged);
-
 /**
- * @param {number} tabId 
+ * Throw an error if a tab does not have an id or an URL
+ * @typedef {{id:number, url:string} & chrome.tabs.Tab} GoodTab
+ * @param {chrome.tabs.Tab} tab 
+ * @returns {GoodTab}
  */
-function add_listeners(tabId) {
-    /**
-     * Selector for which requests we want to intercept
-     * @type chrome.webRequest.RequestFilter
-     */
-    const REQUESTS_FILTER = {
-        tabId,
-        urls: ["<all_urls>"],
-        // @ts-ignore
-        types: [
-            "main_frame",
-            "image",
-            "object",
-            "object_subrequest",
-            "sub_frame",
-            "xmlhttprequest",
-            "other"
-        ].filter(t => VALID_RESOURCE_TYPES.has(t))
-    };
-    chrome.webRequest.onCompleted.addListener(handleRequest, REQUESTS_FILTER);
-}
-
-function remove_listeners() {
-    chrome.webRequest.onCompleted.removeListener(handleRequest);
+function checkTab(tab) {
+    if (!tab.id || !tab.url) throw new Error(`bad tab: ${tab}`);
+    // @ts-ignore
+    return tab;
 }
 
 /**
- * Handle clicks on the extension's icon
- */
-chrome.browserAction.onClicked.addListener(async function handleIconClick(tab) {
-    if (!tab.id || !tab.url) throw new Error(`Invalid tab: ${JSON.stringify(tab)}`);
-    const found = found_images.get(tab.id);
-    if (!found || found.size == 0) {
-        remove_listeners();
-        add_listeners(tab.id);
-        chrome.tabs.reload(tab.id, { bypassCache: true });
-        setStatus(tab.id, 'SEARCHING', 0);
-    } else {
-        found.forEach(openDezoomify);
-        found_images.delete(tab.id);
-        remove_listeners();
-        setStatus(tab.id, 'SLEEPING', 0);
-    }
-});
+ * A context menu action
+ * @typedef {{
+    *      title:string,
+    *      url?:string,
+    *      onclick?: (info: chrome.contextMenus.OnClickData, tab: chrome.tabs.Tab) => void
+    * }} MenuAction
+    */
 
-
-chrome.contextMenus.removeAll();
 /**
- * Add a right-click action to report bugs
- * @type {{
- *      title:string,
- *      url?:string,
- *      onclick?: (info: chrome.contextMenus.OnClickData, tab: chrome.tabs.Tab) => void
- * }[]}
+ * @type {MenuAction[]}
  */
-const MENU_ACTIONS = [
+const DEFAULT_MENU_ACTIONS = [
     {
         title: "Usage instructions and information",
         url: 'https://github.com/lovasoa/dezoomify-extension/#dezoomify-extension',
     },
     {
         title: "Open Dezoomify",
-        onclick(_info, tab) {
-            const url = DEZOOMIFY_URL + tab.url;
-            chrome.tabs.create({ url, active: true, })
-        },
+        onclick(_info, tab) { openDezoomify(checkTab(tab).url) },
     },
     {
-        title: "Stop listening for new zoomable images",
-        onclick(_info, tab) {
-            remove_listeners();
-            const tabIds = [tab.id, ...found_images.keys()];
-            for (const tabId of tabIds) setStatus(tabId, "SLEEPING", 0);
-            found_images.clear();
+        title: "Stop dezoomify on all pages",
+        onclick(_info, _tab) {
+            for (const l of page_listeners.values()) l.close();
+            page_listeners.clear();
         },
     },
     {
@@ -200,7 +193,12 @@ const MENU_ACTIONS = [
         url: "https://github.com/sponsors/lovasoa"
     }
 ]
-MENU_ACTIONS.forEach(({ title, url, onclick }) => {
+
+/**
+ * Add right-click menu actions
+ */
+chrome.contextMenus.removeAll();
+DEFAULT_MENU_ACTIONS.forEach(({ title, url, onclick }) => {
     chrome.contextMenus.create({
         title,
         contexts: ["browser_action"],

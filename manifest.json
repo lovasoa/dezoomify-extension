@@ -1,21 +1,21 @@
 {
     "manifest_version": 2,
     "name": "Dezoomify",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "description": "Download zoomable images from web pages",
     "icons": {
-        "24": "icons/icon-24.png",
-        "96": "icons/icon-96.png",
-        "128": "icons/icon-128.png",
-        "512": "icons/icon-512.png"
+        "24": "icons/color/icon-24.png",
+        "96": "icons/color/icon-96.png",
+        "128": "icons/color/icon-128.png",
+        "512": "icons/color/icon-512.png"
     },
     "browser_action": {
         "browser_style": true,
         "default_icon": {
-            "24": "icons/icon-24.png",
-            "96": "icons/icon-96.png",
-            "128": "icons/icon-128.png",
-            "512": "icons/icon-512.png"
+            "24": "icons/grey/icon-24.png",
+            "96": "icons/grey/icon-96.png",
+            "128": "icons/grey/icon-128.png",
+            "512": "icons/grey/icon-512.png"
         },
         "default_title": "Dezoomify: click to activate zoomable image search"
     },
