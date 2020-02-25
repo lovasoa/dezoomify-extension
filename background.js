@@ -115,9 +115,7 @@ function add_listeners(tabId) {
             "other"
         ].filter(t => VALID_RESOURCE_TYPES.has(t))
     };
-    if (!chrome.webRequest.onCompleted.hasListener(handleRequest)) {
-        chrome.webRequest.onCompleted.addListener(handleRequest, REQUESTS_FILTER);
-    }
+    chrome.webRequest.onCompleted.addListener(handleRequest, REQUESTS_FILTER);
 }
 
 function remove_listeners() {
