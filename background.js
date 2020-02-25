@@ -21,6 +21,28 @@ const MIN_REQUEST_TIME = 1000; // Minimum amount of time to keep a request in ca
 const found_images = new Map;
 
 /**
+ * Sets the extension's icon status
+ * @param {number|undefined} tabId 
+ * @param {'SEARCHING'|'SLEEPING'|undefined} status 
+ * @param {number} found 
+ */
+function setStatus(tabId, status, found) {
+    let badge = found || 0, title = '';
+    if (found > 1) {
+        title = `Found ${found} images. Click to open them.`
+    } else if (found === 1) {
+        title = "Found a zoomable image on this page. Click to open it.";
+    } else if (status === 'SEARCHING') {
+        title = 'Listening for zoomable image requests in this tab... ' +
+            'Zoom on your image and it should be detected.';
+    } else if (status === 'SLEEPING') {
+        title = 'Click to search for zoomable images in this page';
+    }
+    chrome.browserAction.setBadgeText({ text: (badge || '').toString(), tabId })
+    if (title) chrome.browserAction.setTitle({ title, tabId })
+}
+
+/**
  * Adds a request to the cached zoomable image requests
  * @param {WebRequest} request 
  */
@@ -28,10 +50,7 @@ function foundZoomableImage(request) {
     let found = found_images.get(request.tabId) || new Map;
     found.set(request.url, request);
     found_images.set(request.tabId, found);
-    chrome.browserAction.setBadgeText({
-        text: found.size.toString(),
-        tabId: request.tabId
-    });
+    setStatus(request.tabId, 'SEARCHING', found.size);
 }
 
 // @ts-ignore
@@ -67,7 +86,7 @@ function deleteSavedImages({ tabId }) {
     if (found.size === 0) {
         found_images.delete(tabId);
     }
-    chrome.browserAction.setBadgeText({ text: (found.size || "").toString(), tabId });
+    setStatus(tabId, undefined, found.size);
 }
 
 
@@ -129,28 +148,48 @@ chrome.browserAction.onClicked.addListener(async function handleIconClick(tab) {
     if (!tab.id || !tab.url) throw new Error(`Invalid tab: ${JSON.stringify(tab)}`);
     const found = found_images.get(tab.id);
     if (!found || found.size == 0) {
+        remove_listeners();
         add_listeners(tab.id);
         chrome.tabs.reload(tab.id, { bypassCache: true });
+        setStatus(tab.id, 'SEARCHING', 0);
     } else {
         found.forEach(openDezoomify);
         found_images.delete(tab.id);
-        chrome.browserAction.setBadgeText({ text: "", tabId: tab.id });
         remove_listeners();
+        setStatus(tab.id, 'SLEEPING', 0);
     }
 });
 
+
+chrome.contextMenus.removeAll();
 /**
  * Add a right-click action to report bugs
+ * @type {{
+ *      title:string,
+ *      url?:string,
+ *      onclick?: (info: chrome.contextMenus.OnClickData, tab: chrome.tabs.Tab) => void
+ * }[]}
  */
-chrome.contextMenus.removeAll();
-[
+const MENU_ACTIONS = [
     {
         title: "Usage instructions and information",
         url: 'https://github.com/lovasoa/dezoomify-extension/#dezoomify-extension',
     },
     {
         title: "Open Dezoomify",
-        url: 'https://ophir.alwaysdata.net/dezoomify/dezoomify.html',
+        onclick(_info, tab) {
+            const url = DEZOOMIFY_URL + tab.url;
+            chrome.tabs.create({ url, active: true, })
+        },
+    },
+    {
+        title: "Stop listening for new zoomable images",
+        onclick(_info, tab) {
+            remove_listeners();
+            const tabIds = [tab.id, ...found_images.keys()];
+            for (const tabId of tabIds) setStatus(tabId, "SLEEPING", 0);
+            found_images.clear();
+        },
     },
     {
         title: "Report a problem with this extension",
@@ -160,10 +199,11 @@ chrome.contextMenus.removeAll();
         title: "Support me, the developer !",
         url: "https://github.com/sponsors/lovasoa"
     }
-].forEach(({ title, url }) => {
+]
+MENU_ACTIONS.forEach(({ title, url, onclick }) => {
     chrome.contextMenus.create({
         title,
         contexts: ["browser_action"],
-        onclick() { chrome.tabs.create({ url, active: true, }) }
+        onclick: onclick || (_ => chrome.tabs.create({ url, active: true, }))
     });
 });

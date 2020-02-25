@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Dezoomify",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "Download zoomable images from web pages",
     "icons": {
         "24": "icons/icon-24.png",
@@ -17,7 +17,7 @@
             "128": "icons/icon-128.png",
             "512": "icons/icon-512.png"
         },
-        "default_title": "Dezoomify"
+        "default_title": "Dezoomify: click to activate zoomable image search"
     },
     "permissions": [
         "<all_urls>",
