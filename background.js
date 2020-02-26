@@ -1,10 +1,20 @@
 const DEZOOMIFY_URL = "https://ophir.alwaysdata.net/dezoomify/dezoomify.html#";
 
-const META_REGEX = /\/ImageProperties.xml|\/info.json|\?FIF=|\.dzi$|\.img.\?cmd=info|\.pff(&requestType=1)?$|\.ecw$|artsandculture\.google\.com\/asset\//i;
+const META_REGEX = new RegExp([
+    /\/ImageProperties.xml/, // Zoomify
+    /\/info.json/, // IIIF
+    /\?FIF=/, // IIPImage
+    /\.dzi$/, // OpenSeadragon
+    /\.img.\\?cmd=info/,
+    /\.pff(&requestType=1)?$/, // Zoomify PFF
+    /\.ecw$/, // Hungaricana
+    /artsandculture\.google\.com\/asset\// // Google Arts
+].map(e => e.source).join('|'));
 const META_REPLACE = [
     { pattern: /_files\/\d+\/\d+_\d+.jpg$/, replacement: '.dzi' },
     { pattern: /\/TileGroup\d+\/\d+-\d+-\d+.jpg$/, replacement: '/ImageProperties.xml' },
     { pattern: /\/ImageProperties\.xml\?t\w+$/, replacement: '/ImageProperties.xml' },
+    { pattern: /(\?FIF=[^&]*)&.*/, replacement: '$1' }, // IIPImage
     { pattern: /(http.*artsandculture\.google\.com\/asset\/.+\/.+)\?.*/, replacement: '$1' },
 ];
 // @ts-ignore
@@ -35,17 +45,20 @@ const page_listeners = new Map;
  * Handle a click on the extension's icon
  * @param {chrome.tabs.Tab} unchecked_tab 
  */
-function click(unchecked_tab) {
+async function click(unchecked_tab) {
     const tab = checkTab(unchecked_tab);
+    chrome.browserAction.setBadgeText({ text: '...', tabId: tab.id });
     const listener = page_listeners.get(tab.id);
-    if (listener) {
+    if (listener && sameSite(tab.url, listener.tab.url) && await listener.hasVisibleResults()) {
         // Open the images that may have been found, and stop the existing listener
         listener.openFound();
         listener.close();
         page_listeners.delete(checkTab(listener.tab).id);
     } else {
-        // No existing listener, start the extension for this tab
-        page_listeners.set(tab.id, new PageListener(tab));
+        // No active listener, start the extension for this tab
+        if (listener) listener.close();
+        const newListener = new PageListener(tab);
+        page_listeners.set(tab.id, newListener);
     }
 }
 
@@ -59,29 +72,47 @@ class PageListener {
      * @param {chrome.tabs.Tab} tab 
      */
     constructor(tab) {
-        this.listening = true;
         this.tab = checkTab(tab);
         /** @type {Set<string>} */
         this.found = new Set;
         this.handleRequest(this.tab);
         this.listener = this.handleRequest.bind(this);
         const filter = { tabId: this.tab.id, ...REQUESTS_FILTER };
-        chrome.webRequest.onCompleted.addListener(this.listener, filter);
+        chrome.webRequest.onBeforeRequest.addListener(this.listener, filter);
         this.updateStatus();
     }
 
 
     close() {
-        chrome.webRequest.onCompleted.removeListener(this.listener);
-        this.listening = false;
+        chrome.webRequest.onBeforeRequest.removeListener(this.listener);
         this.found.clear();
         this.updateStatus();
     }
 
     /**
-     * @param {{url:string}} request 
+     * @returns {boolean}
      */
-    handleRequest({ url }) {
+    isListening() {
+        return chrome.webRequest.onBeforeRequest.hasListener(this.listener);
+    }
+
+    /**
+     * Returns whether the listener currently looks "activated" from the user's perspective
+     * @returns {Promise<boolean>}
+     */
+    hasVisibleResults() {
+        return new Promise((accept) => {
+            chrome.browserAction.getTitle({ tabId: this.tab.id }, title => {
+                accept(title !== getManifest().browser_action.default_title);
+            });
+        });
+    }
+
+    /**
+     * @param {{url:string, documentUrl?: string}} request 
+     */
+    handleRequest({ url, documentUrl }) {
+        if (documentUrl && !sameSite(documentUrl, this.tab.url)) return;
         for (const { pattern, replacement } of META_REPLACE) {
             url = url.replace(pattern, replacement);
         }
@@ -103,31 +134,26 @@ class PageListener {
      * Sets the extension's icon status
      */
     updateStatus() {
+        const manifest = getManifest();
         const found = this.found.size;
-        const badge = (found || '').toString();
+        let badge = (found || '').toString();
         let title = '';
-        if (found > 1) {
-            title = `Found ${found} images. Click to open them.`
-        } else if (found === 1) {
-            title = "Found a zoomable image on this page. Click to open it.";
-        } else if (this.listening) {
+        if (!this.isListening()) {
+            badge = '';
+            title = '' + manifest.browser_action.default_title;
+        } else if (found === 0) {
             title = 'Listening for zoomable image requests in this tab... ' +
                 'Zoom on your image and it should be detected.';
+        } else if (found === 1) {
+            title = "Found a zoomable image on this page. Click to open it.";
         } else {
-            title = 'Click to search for zoomable images in this page';
+            title = `Found ${found} images. Click to open them.`
         }
         const tabId = this.tab.id;
         chrome.browserAction.setBadgeText({ text: badge, tabId });
         chrome.browserAction.setTitle({ title, tabId });
-        const color = this.listening ? 'color' : 'grey';
-        chrome.browserAction.setIcon({
-            tabId,
-            path: [24, 96, 128, 512].reduce((obj, size) => {
-                // @ts-ignore
-                obj[size.toString()] = `icons/${color}/icon-${size}.png`;
-                return obj;
-            }, {})
-        });
+        const path = this.isListening() ? manifest.icons : manifest.browser_action.default_icon;
+        chrome.browserAction.setIcon({ tabId, path });
     }
 
     openFound() {
@@ -158,6 +184,25 @@ function checkTab(tab) {
 }
 
 /**
+ * Checks whether the two tabs point to the same site
+ * @param {string} url1 
+ * @param {string} url2 
+ */
+function sameSite(url1, url2) {
+    return new URL(url1).origin === new URL(url2).origin;
+}
+
+
+/**
+ * @returns {{browser_action:chrome.runtime.ManifestAction} & chrome.runtime.Manifest} the extension's manifest
+ */
+function getManifest() {
+    const { browser_action, ...manifest } = chrome.runtime.getManifest();
+    if (!browser_action) throw new Error(`Invalid manifest: ${manifest}`);
+    return { browser_action, ...manifest };
+}
+
+/**
  * A context menu action
  * @typedef {{
     *      title:string,
@@ -175,11 +220,11 @@ const DEFAULT_MENU_ACTIONS = [
         url: 'https://github.com/lovasoa/dezoomify-extension/#dezoomify-extension',
     },
     {
-        title: "Open Dezoomify",
+        title: "Open the Dezoomify website",
         onclick(_info, tab) { openDezoomify(checkTab(tab).url) },
     },
     {
-        title: "Stop dezoomify on all pages",
+        title: "Deactivate dezoomify on all tabs",
         onclick(_info, _tab) {
             for (const l of page_listeners.values()) l.close();
             page_listeners.clear();

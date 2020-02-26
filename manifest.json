@@ -17,13 +17,12 @@
             "128": "icons/grey/icon-128.png",
             "512": "icons/grey/icon-512.png"
         },
-        "default_title": "Dezoomify: click to activate zoomable image search"
+        "default_title": "Dezoomify is inactive. Click to activate zoomable image search."
     },
     "permissions": [
         "<all_urls>",
         "activeTab",
         "webRequest",
-        "webNavigation",
         "contextMenus"
     ],
     "background": {
