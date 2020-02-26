@@ -49,7 +49,7 @@ async function click(unchecked_tab) {
     const tab = checkTab(unchecked_tab);
     chrome.browserAction.setBadgeText({ text: '...', tabId: tab.id });
     const listener = page_listeners.get(tab.id);
-    if (listener && sameSite(tab.url, listener.tab.url) && await listener.hasVisibleResults()) {
+    if (listener && listener.isListening()) {
         // Open the images that may have been found, and stop the existing listener
         listener.openFound();
         listener.close();
@@ -75,11 +75,12 @@ class PageListener {
         this.tab = checkTab(tab);
         /** @type {Set<string>} */
         this.found = new Set;
-        this.handleRequest(this.tab);
         this.listener = this.handleRequest.bind(this);
         const filter = { tabId: this.tab.id, ...REQUESTS_FILTER };
         chrome.webRequest.onBeforeRequest.addListener(this.listener, filter);
+        this.handleRequest(this.tab);
         this.updateStatus();
+        this.interval = setInterval(this.updateStatus.bind(this), 1000);
     }
 
 
@@ -87,6 +88,7 @@ class PageListener {
         chrome.webRequest.onBeforeRequest.removeListener(this.listener);
         this.found.clear();
         this.updateStatus();
+        clearInterval(this.interval);
     }
 
     /**
@@ -138,16 +140,17 @@ class PageListener {
         const found = this.found.size;
         let badge = (found || '').toString();
         let title = '';
+        const { host } = new URL(this.tab.url);
         if (!this.isListening()) {
             badge = '';
             title = '' + manifest.browser_action.default_title;
         } else if (found === 0) {
-            title = 'Listening for zoomable image requests in this tab... ' +
+            title = `Listening for zoomable image requests from ${host}... ` +
                 'Zoom on your image and it should be detected.';
         } else if (found === 1) {
-            title = "Found a zoomable image on this page. Click to open it.";
+            title = `Found a zoomable image on ${host}. Click to open it.`;
         } else {
-            title = `Found ${found} images. Click to open them.`
+            title = `Found ${found} images on ${host}. Click to open them.`
         }
         const tabId = this.tab.id;
         chrome.browserAction.setBadgeText({ text: badge, tabId });
