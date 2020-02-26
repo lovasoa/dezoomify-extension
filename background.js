@@ -60,9 +60,10 @@ class PageListener {
      */
     constructor(tab) {
         this.listening = true;
-        this.tab = tab;
+        this.tab = checkTab(tab);
         /** @type {Set<string>} */
         this.found = new Set;
+        this.handleRequest(this.tab);
         this.listener = this.handleRequest.bind(this);
         const filter = { tabId: this.tab.id, ...REQUESTS_FILTER };
         chrome.webRequest.onCompleted.addListener(this.listener, filter);
@@ -78,23 +79,23 @@ class PageListener {
     }
 
     /**
-     * @param {chrome.webRequest.WebRequestDetails} request 
+     * @param {{url:string}} request 
      */
-    handleRequest(request) {
+    handleRequest({ url }) {
         for (const { pattern, replacement } of META_REPLACE) {
-            request.url = request.url.replace(pattern, replacement);
+            url = url.replace(pattern, replacement);
         }
-        if (META_REGEX.test(request.url) && !request.url.startsWith(DEZOOMIFY_URL)) {
-            this.foundZoomableImage(request);
+        if (META_REGEX.test(url) && !url.startsWith(DEZOOMIFY_URL)) {
+            this.foundZoomableImage(url);
         }
     }
 
     /**
      * Adds a request to the cached zoomable image requests
-     * @param {chrome.webRequest.WebRequestDetails} request 
+     * @param {string} url 
      */
-    foundZoomableImage(request) {
-        this.found.add(request.url);
+    foundZoomableImage(url) {
+        this.found.add(url);
         this.updateStatus();
     }
 
