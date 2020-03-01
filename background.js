@@ -1,5 +1,13 @@
 const DEZOOMIFY_URL = "https://ophir.alwaysdata.net/dezoomify/dezoomify.html#";
 
+const iiifpath = new RegExp( // IIIF API image URL
+    "/\\^?(full|square|(pct:)?\\d+,\\d+,\\d+,\\d+)" + // region
+    "/(full|max|\\d+,|,\\d+|pct:\\d+|!?\\d+,\\d+)" + // size
+    "/!?[1-3]?[0-9]?[0-9]" + // rotation
+    "/(color|gray|bitonal|default|native)" + // quality
+    "\\.(jpe?g|tiff?|png|gif|jp2|pdf|webp)" // format
+);
+
 const META_REGEX = new RegExp([
     /\/ImageProperties.xml/, // Zoomify
     /\/info.json/, // IIIF
@@ -8,6 +16,7 @@ const META_REGEX = new RegExp([
     /\.img.\\?cmd=info/,
     /\.pff(&requestType=1)?$/, // Zoomify PFF
     /\.ecw$/, // Hungaricana
+    iiifpath,
     /artsandculture\.google\.com\/asset\// // Google Arts
 ].map(e => e.source).join('|'));
 const META_REPLACE = [
@@ -16,6 +25,7 @@ const META_REPLACE = [
     { pattern: /\/ImageProperties\.xml\?t\w+$/, replacement: '/ImageProperties.xml' },
     { pattern: /(\?FIF=[^&]*)&.*/, replacement: '$1' }, // IIPImage
     { pattern: /(http.*artsandculture\.google\.com\/asset\/.+\/.+)\?.*/, replacement: '$1' },
+    { pattern: iiifpath, replacement: '/info.json' },
 ];
 // @ts-ignore
 const VALID_RESOURCE_TYPES = new Set(Object.values(chrome.webRequest['ResourceType']));
