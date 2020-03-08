@@ -15,7 +15,7 @@ This project is a browser extension for detecting zoomable images in web pages a
 1. click the icon to open the image in the dezoomify website
 1. click "dezoomify", and wait for the image to download
 
-<img src="https://addons.cdn.mozilla.net/user-media/previews/full/232/232845.png?modified=1582549110" height=400 /> <img src="https://addons.cdn.mozilla.net/user-media/previews/full/232/232847.png?modified=1582549114" height=400 />
+![Short animated tutorial](https://user-images.githubusercontent.com/552629/76173337-e7ce3780-619e-11ea-9171-ed47a74cafbe.gif)
 
 ## How to install
 You can install this extension from your browser's official plugin market :
