@@ -16,6 +16,7 @@ const META_REGEX = new RegExp([
     /\.img.\\?cmd=info/,
     /\.pff(&requestType=1)?$/, // Zoomify PFF
     /\.ecw$/, // Hungaricana
+    /\/p.xml(?:\?.*)?$/, // Mnesys
     iiifpath,
     /artsandculture\.google\.com\/asset\// // Google Arts
 ].map(e => e.source).join('|'));
