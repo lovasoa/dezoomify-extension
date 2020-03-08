@@ -5,9 +5,15 @@
 ## What does it do ?
 This project is a browser extension for detecting zoomable images in web pages and downloading them with [dezoomify](https://github.com/lovasoa/dezoomify).
 
-Just [install the extension](#how-to-install), open a zoomable image in your browser,
-click the blue magnifying glass icon in the address bar (<img src="./icons/icon.svg" width=20 height=20/>),
-and you'll be able to download the image.
+## How to use
+1. Install the extension,
+1. open a zoomable image in your browser,
+1. click the grey magnifying glass icon in the address bar (<img src="./icons/grey/icon-24.png" width=16 height=16/>),
+1. the icon should become blue (<img src="./icons/color/icon-24.png" width=16 height=16/>), denoting that the extension is now actively listening for zoomable image requests,
+1. zoom into the image or reload the page
+1. if the extension detected zoomable images, you should see a small badge appear over the icon with the number of images found written in it
+1. click the icon to open the image in the dezoomify website
+1. click "dezoomify", and wait for the image to download
 
 <img src="https://addons.cdn.mozilla.net/user-media/previews/full/232/232845.png?modified=1582549110" height=400 /> <img src="https://addons.cdn.mozilla.net/user-media/previews/full/232/232847.png?modified=1582549114" height=400 />
 
