@@ -20,27 +20,27 @@ This project is a browser extension for detecting zoomable images in web pages a
 ## How to install
 You can install this extension from your browser's official plugin market :
  - for Firefox, see [dezoomify on **Mozilla Addons**](https://addons.mozilla.org/en-US/firefox/addon/dezoomify/)
- - for Chrome, see [dezoomify on the **Chrome Web Store**](https://chrome.google.com/webstore/detail/dezoomify/iapjjopjejpelnfdonefbffahmcndfbm)
+ - for Chrome, see [dezoomify on the **Chrome Web Store**](https://chrome.google.com/webstore/detail/dezoomify/iapjjopjejpelnfdonefbffahmcndfbm) ( *Unfortunately, google takes several weeks to review every extension update, so this version is usually less up-to-date and has more bugs than the firefox one* )
 
 You can also [download the extension](https://github.com/lovasoa/dezoomify-extension/releases) and install it manually in developer mode.
 
 ## How does it work ?
 
-When you click on the addon's icon (the magnifying glass), it reloads the current page
-while intercepting all network requests that match a certain pattern.
+When you click on the addon's icon (the magnifying glass), it starts intercepting
+all network requests that match a certain pattern.
 
 When a request to what looks like a zoomable image is found,
 it shows a little badge in your address bar, which you can click 
 to download the image with dezoomify.
 
-For more information about dezoomify, see: https://github.com/lovasoa/dezoomify
+For more information about dezoomify, see the [dezoomify readme](https://github.com/lovasoa/dezoomify#dezoomify).
 
 ## Permissions
 
 This browser addon requires the following permissions:
 
- - *Access browser activity during navigation* :
-    needed to detect when you leave a webpage, so that the icon can be hidden and the older zoomable image information forgotten.
+ - *Access your data for all websites* :
+    needed to intercept the requests that pages make, in order to look for zoomable images inside them.
 
 ## Free Software
 This addon is a free software (see [LICENSE](./LICENSE)).
