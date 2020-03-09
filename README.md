@@ -3,7 +3,7 @@
 ![Tests](https://github.com/lovasoa/dezoomify-extension/workflows/Tests/badge.svg)
 
 ## What does it do ?
-This project is a browser extension for detecting zoomable images in web pages and downloading them with [dezoomify](https://github.com/lovasoa/dezoomify).
+This project is a browser extension for detecting zoomable images in web pages and downloading them with [dezoomify](https://github.com/lovasoa/dezoomify). It works with many different websites from museums, art galleries, libraries, and many other sources. 
 
 ## How to use
 1. Install the extension,
@@ -27,9 +27,9 @@ You can also [download the extension](https://github.com/lovasoa/dezoomify-exten
 ## How does it work ?
 
 When you click on the addon's icon (the magnifying glass), it starts intercepting
-all network requests that match a certain pattern.
+all network requests coming from the site you are currently on.
 
-When a request to what looks like a zoomable image is found,
+When a request to what looks like a zoomable image (based on a set of URL patterns) is found,
 it shows a little badge in your address bar, which you can click 
 to download the image with dezoomify.
 
