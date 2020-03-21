@@ -16,7 +16,8 @@ This project is a browser extension for detecting zoomable images in web pages a
 8. click "dezoomify", and wait while the image downloads at maximal resolution
 9. right-click on the downloaded image, and choose "Save As" to save it as a PNG file on your computer
 
-![Short animated tutorial](https://user-images.githubusercontent.com/552629/76173337-e7ce3780-619e-11ea-9171-ed47a74cafbe.gif)
+### Animated Tutorial
+![Short animated tutorial](https://user-images.githubusercontent.com/552629/77237075-ea7c5400-6bc4-11ea-85fb-319a033c32f9.gif)
 
 ## How to install
 You can install this extension from your browser's official plugin market :
@@ -35,6 +36,11 @@ it shows a little badge in your address bar, which you can click
 to download the image with dezoomify.
 
 For more information about dezoomify, see the [dezoomify readme](https://github.com/lovasoa/dezoomify#dezoomify).
+
+## What to do if it doesn't work
+
+You can read [dezoomify's Frequently Asked Questions](https://github.com/lovasoa/dezoomify/wiki/Dezoomify-FAQ).
+If you think you found a bug with the extension, or want to suggest a new feature, you can [open a ticket here](https://github.com/lovasoa/dezoomify-extension/issues/new).
 
 ## Permissions
 
