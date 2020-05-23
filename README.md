@@ -21,6 +21,9 @@ This project is a browser extension for detecting zoomable images in web pages a
 ### Animated Tutorial
 [![Short animated tutorial](https://user-images.githubusercontent.com/552629/77237075-ea7c5400-6bc4-11ea-85fb-319a033c32f9.gif)](https://user-images.githubusercontent.com/552629/77237075-ea7c5400-6bc4-11ea-85fb-319a033c32f9.gif)
 
+## If the image is very large
+As [stated in its documentation](https://github.com/lovasoa/dezoomify/wiki/Very-large-images), dezoomify may fail with very large images. In this case, you can still use this extension to find the zoomable image address, and then use [**dezoomify-rs**](https://lovasoa.github.io/dezoomify-rs/) instead of **dezoomify** to download the image. When the extension opens a new tab with dezoomify, don't click *Dezoomify!*, but instead copy the image URL, open dezoomify-rs on your computer, and paste it. 
+
 ## How to install
 You can install this extension from your browser's official plugin market :
  - for Firefox, see [dezoomify on **Mozilla Addons**](https://addons.mozilla.org/en-US/firefox/addon/dezoomify/)
