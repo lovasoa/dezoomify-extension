@@ -19,7 +19,7 @@ This project is a browser extension for detecting zoomable images in web pages a
 9. right-click on the downloaded image, and choose "Save As" to save it as a PNG file on your computer
 
 ### Animated Tutorial
-![Short animated tutorial](https://user-images.githubusercontent.com/552629/77237075-ea7c5400-6bc4-11ea-85fb-319a033c32f9.gif)
+[![Short animated tutorial](https://user-images.githubusercontent.com/552629/77237075-ea7c5400-6bc4-11ea-85fb-319a033c32f9.gif)](https://user-images.githubusercontent.com/552629/77237075-ea7c5400-6bc4-11ea-85fb-319a033c32f9.gif)
 
 ## How to install
 You can install this extension from your browser's official plugin market :
