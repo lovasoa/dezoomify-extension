@@ -10,8 +10,8 @@ This project is a browser extension for detecting zoomable images in web pages a
 ## How to use
 1. Install the extension
 2. open a zoomable image in your browser
-3. click the grey magnifying glass icon in the address bar (<img src="./icons/grey/icon-24.png" width=16 height=16/>)
-4. the icon should become blue (<img src="./icons/color/icon-24.png" width=16 height=16/>), denoting that the extension is now actively listening for zoomable image requests
+3. click the grey magnifying glass icon in the address bar (![dezoomify inactive icon](./icons/grey/icon-24.png))
+4. the icon should become blue (![dezoomify active icon](./icons/color/icon-24.png)), denoting that the extension is now actively listening for zoomable image requests
 5. zoom into the image or reload the page
 6. if the extension detects zoomable images, you should see a small badge appear over the icon specifying the number of images found
 7. click the icon to open the image in the dezoomify website
