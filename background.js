@@ -139,6 +139,15 @@ class PageListener {
      * @param {string} url 
      */
     foundZoomableImage(url) {
+        let parsed_url = new URL(url);
+        // Avoid duplicated URLs. Favor the https variant
+        if (parsed_url.protocol === "http:") {
+            parsed_url.protocol = "https:";
+            if (this.found.has(parsed_url.toString())) return;
+        } else if (parsed_url.protocol === "https:") {
+            parsed_url.protocol = "http:";
+            this.found.delete(parsed_url.toString());
+        }
         this.found.add(url);
         this.updateStatus();
     }
