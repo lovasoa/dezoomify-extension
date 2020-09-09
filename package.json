@@ -5,7 +5,7 @@
   "main": "background.js",
   "scripts": {
     "test": "tsc",
-    "build": "zip -r dezoomify.zip icons/ background.js manifest.json"
+    "build": "bash -x build.sh"
   },
   "repository": {
     "type": "git",
