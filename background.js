@@ -12,7 +12,7 @@ const META_REGEX = new RegExp([
     /\/ImageProperties.xml/, // Zoomify
     /\/info.json/, // IIIF
     /\?FIF=/, // IIPImage
-    /\.dzi$/, // OpenSeadragon
+    /_files\/0\/0_0.jpg$/, // OpenSeadragon
     /\.img.\\?cmd=info/,
     /\.pff(&requestType=1)?$/, // Zoomify PFF
     /\.ecw$/, // Hungaricana
@@ -21,7 +21,8 @@ const META_REGEX = new RegExp([
     /artsandculture\.google\.com\/asset\// // Google Arts
 ].map(e => e.source).join('|'));
 const META_REPLACE = [
-    { pattern: /_files\/\d+\/\d+_\d+.jpg$/, replacement: '.dzi' },
+    { pattern: /\.dzi$/, replacement: '_files/0/0_0.jpg' },
+    { pattern: /_files\/\d+\/\d+_\d+\.jpg$/, replacement: '_files/0/0_0.jpg' },
     { pattern: /\/TileGroup\d+\/\d+-\d+-\d+.jpg$/, replacement: '/ImageProperties.xml' },
     { pattern: /\/ImageProperties\.xml\?t\w+$/, replacement: '/ImageProperties.xml' },
     { pattern: /(\?FIF=[^&]*)&.*/, replacement: '$1' }, // IIPImage
