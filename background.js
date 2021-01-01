@@ -12,18 +12,18 @@ const META_REGEX = new RegExp([
     /\/ImageProperties.xml/, // Zoomify
     /\/info.json/, // IIIF
     /\?FIF=/, // IIPImage
-    /_files\/0\/0_0.jpg$/, // OpenSeadragon
+    /_files\/0\/0_0.jpg(?:\?.*)?$/, // OpenSeadragon
     /\.img.\\?cmd=info/,
     /\.pff(&requestType=1)?$/, // Zoomify PFF
-    /\.ecw$/, // Hungaricana
+    /\.ecw(?:\?.*)?$/, // Hungaricana
     /\/p.xml(?:\?.*)?$/, // Mnesys
     iiifpath,
     /artsandculture\.google\.com\/asset\// // Google Arts
 ].map(e => e.source).join('|'));
 const META_REPLACE = [
-    { pattern: /\.dzi$/, replacement: '_files/0/0_0.jpg' },
-    { pattern: /_files\/\d+\/\d+_\d+\.jpg$/, replacement: '_files/0/0_0.jpg' },
-    { pattern: /\/TileGroup\d+\/\d+-\d+-\d+.jpg$/, replacement: '/ImageProperties.xml' },
+    { pattern: /\.dzi(?:\?.*)?$/, replacement: '_files/0/0_0.jpg' },
+    { pattern: /_files\/\d+\/\d+_\d+\.jpg(?:\?.*)?$/, replacement: '_files/0/0_0.jpg' },
+    { pattern: /\/TileGroup\d+\/\d+-\d+-\d+.jpg(?:\?.*)?$/, replacement: '/ImageProperties.xml' },
     { pattern: /\/ImageProperties\.xml\?t\w+$/, replacement: '/ImageProperties.xml' },
     { pattern: /(\?FIF=[^&]*)&.*/, replacement: '$1' }, // IIPImage
     { pattern: /(http.*artsandculture\.google\.com\/asset\/.+\/.+)\?.*/, replacement: '$1' },
