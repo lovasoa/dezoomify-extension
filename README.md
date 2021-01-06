@@ -4,7 +4,7 @@
 This project is a browser extension for detecting zoomable images in web pages and downloading them with [dezoomify](https://github.com/lovasoa/dezoomify). It works with the websites of many different museums, art galleries, libraries, and numerous other sources. 
 
 
-[![Google Chrome: download on the chrome web store](https://developer.chrome.com/webstore/images/ChromeWebStore_BadgeWBorder_v2_206x58.png)](https://chrome.google.com/webstore/detail/dezoomify/iapjjopjejpelnfdonefbffahmcndfbm)
+[![Google Chrome: download on the chrome web store](https://developer.chrome.com/webstore/images/ChromeWebStore_BadgeWBorder_v2_206x58.png)](https://user-images.githubusercontent.com/552629/103781818-1a52f600-5037-11eb-9d25-55fb04e37184.png)
 [![Mozilla Firefox: download on mozilla addons](https://user-images.githubusercontent.com/552629/82738693-f4900f80-9d39-11ea-816c-1bddb73b6967.png)](https://addons.mozilla.org/en-US/firefox/addon/dezoomify/)
 
 ## How to use
