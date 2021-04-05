@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Dezoomify",
-    "version": "<The version will be filled in automatically by build.sh>",
+    "version": "0.4.6",
     "description": "Download zoomable images from web pages",
     "icons": {
         "24": "icons/color/icon-24.png",
@@ -22,7 +22,8 @@
     "permissions": [
         "activeTab",
         "webRequest",
-        "contextMenus"
+        "contextMenus",
+        "<all_urls>"
     ],
     "background": {
         "scripts": [

@@ -1,17 +1,8 @@
 version=$(jq '.version' < package.json)
 
-# Firefox extension
-jq '.version |= '"$version"' | 
-    .permissions |= ["<all_urls>"] + .
-' < manifest-template.json > manifest.json
+TMPDIR=$(mktemp -d)
+jq '.version |= '"$version"' ' < manifest.json > "$TMPDIR/manifest.json"
 
-rm dezoomify-firefox.zip
-zip -r dezoomify-firefox.zip icons/ background.js manifest.json
-
-# Chrome extension
-jq '.version |= '"$version" < manifest-template.json > manifest.json
-
-rm dezoomify-chrome.zip
-zip -r dezoomify-chrome.zip icons/ background.js manifest.json
-
-rm manifest.json
+rm -f dezoomify.zip
+zip -r dezoomify.zip icons/ background.js manifest.json
+zip -r --junk-paths dezoomify.zip "$TMPDIR/manifest.json"
