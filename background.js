@@ -145,10 +145,9 @@ class PageListener {
     }
 
     /**
-     * @param {{url:string, documentUrl?: string}} request 
+     * @param {{url:string }} request 
      */
-    handleRequest({ url, documentUrl }) {
-        if (documentUrl && !sameSite(documentUrl, this.tab.url)) return;
+    handleRequest({ url }) {
         for (const { pattern, replacement } of META_REPLACE) {
             url = url.replace(pattern, replacement);
         }
