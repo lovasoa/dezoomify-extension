@@ -79,6 +79,15 @@ async function click(unchecked_tab) {
 
 chrome.browserAction.onClicked.addListener(click);
 
+// Remove page listeners when their tab is closed  
+chrome.tabs.onRemoved.addListener(tabID => {
+    const listener = page_listeners.get(tabID);
+    if (listener) {
+        listener.stop();
+        page_listeners.delete(tabID);
+    }
+});
+
 /**
  * Tracks the state of dezoomify on a given tab
  */
@@ -99,10 +108,20 @@ class PageListener {
     }
 
 
+    /**
+     * Stop listening, free all resources used by this listener, and reset the icon
+     */
     close() {
-        chrome.webRequest.onBeforeRequest.removeListener(this.listener);
+        this.stop();
         this.found.clear();
         this.updateStatus();
+    }
+
+    /**
+     * Stop listening and free all resources used by this listener.
+     */
+    stop() {
+        chrome.webRequest.onBeforeRequest.removeListener(this.listener);
         clearInterval(this.interval);
     }
 
