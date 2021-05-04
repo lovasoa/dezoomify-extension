@@ -34,22 +34,12 @@ jobs:
         draft: false
         prerelease: false
     - name: Upload Release Asset
-      id: upload-release-asset-chrome
+      id: upload-release-asset-zip-extension
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./dezoomify-chrome.zip
-        asset_name: dezoomify-chrome.zip
-        asset_content_type: application/zip
-    - name: Upload Release Asset
-      id: upload-release-asset-firefox
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./dezoomify-firefox.zip
-        asset_name: dezoomify-firefox.zip
+        asset_path: ./dezoomify.zip
+        asset_name: dezoomify.zip
         asset_content_type: application/zip
