@@ -26,9 +26,5 @@ jobs:
         CI: true     
     - uses: actions/upload-artifact@v1
       with:
-        name: dezoomify-chrome.zip
-        path: ./dezoomify-chrome.zip
-    - uses: actions/upload-artifact@v1
-      with:
-        name: dezoomify-firefox.zip
-        path: ./dezoomify-firefox.zip
+        name: dezoomify.zip
+        path: ./dezoomify.zip
