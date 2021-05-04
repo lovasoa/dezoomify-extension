@@ -48,6 +48,7 @@ const REQUESTS_FILTER = {
         "object_subrequest",
         "sub_frame",
         "xmlhttprequest",
+        "script",
         "other"
     ].filter(t => VALID_RESOURCE_TYPES.has(t))
 };
