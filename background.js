@@ -14,6 +14,7 @@ const META_REGEX = new RegExp([
     /\?FIF=/, // IIPImage
     /_files\/0\/0_0.jpg(?:\?.*)?$/, // OpenSeadragon
     /\.img.\\?cmd=info/,
+    /getTilesInfo\?object_id/,
     /\.pff(&requestType=1)?$/, // Zoomify PFF
     /\.ecw(?:\?.*)?$/, // Hungaricana
     /\/p.xml(?:\?.*)?$/, // Mnesys
@@ -28,6 +29,7 @@ const META_REPLACE = [
     { pattern: /(\?FIF=[^&]*)&.*/, replacement: '$1' }, // IIPImage
     { pattern: /(http.*artsandculture\.google\.com\/asset\/.+\/.+)\?.*/, replacement: '$1' },
     { pattern: iiifpath, replacement: '/info.json' },
+    { pattern: /getTilesInfo\?object_id=(.*)&callback.*/, replacement: 'getTilesInfo?object_id=$1' },
 ];
 // @ts-ignore
 const VALID_RESOURCE_TYPES = new Set(Object.values(chrome.webRequest['ResourceType']));
@@ -46,6 +48,7 @@ const REQUESTS_FILTER = {
         "object_subrequest",
         "sub_frame",
         "xmlhttprequest",
+        "script",
         "other"
     ].filter(t => VALID_RESOURCE_TYPES.has(t))
 };
