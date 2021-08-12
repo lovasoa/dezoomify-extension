@@ -1,4 +1,4 @@
-const DEZOOMIFY_URL = "https://dezoomify.ophir.dev/dezoomify/dezoomify.html#";
+const DEZOOMIFY_URL = "https://dezoomify.ophir.dev/#";
 
 const iiifpath = new RegExp( // IIIF API image URL
     "/\\^?(full|square|(pct:)?\\d+,\\d+,\\d+,\\d+)" + // region
