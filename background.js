@@ -31,8 +31,26 @@ const META_REPLACE = [
     { pattern: iiifpath, replacement: '/info.json' },
     { pattern: /getTilesInfo\?object_id=(.*)&callback.*/, replacement: 'getTilesInfo?object_id=$1' },
 ];
-// @ts-ignore
-const VALID_RESOURCE_TYPES = new Set(Object.values(chrome.webRequest['ResourceType']));
+/** @type {string[]} */
+const REQUESTED_RESOURCE_TYPES = [
+    "main_frame",
+    "image",
+    "object",
+    "object_subrequest",
+    "sub_frame",
+    "xmlhttprequest",
+    "script",
+    "other"
+];
+/** @type {Set<string>} */
+const VALID_RESOURCE_TYPES = new Set(
+    Object.values(chrome.webRequest.ResourceType)
+);
+/**
+ * @param {string} type
+ * @returns {type is chrome.webRequest.ResourceType}
+ */
+const isResourceType = (type) => VALID_RESOURCE_TYPES.has(type);
 
 /**
  * Selector for which requests we want to intercept
@@ -40,17 +58,7 @@ const VALID_RESOURCE_TYPES = new Set(Object.values(chrome.webRequest['ResourceTy
  */
 const REQUESTS_FILTER = {
     urls: ["<all_urls>"],
-    // @ts-ignore
-    types: [
-        "main_frame",
-        "image",
-        "object",
-        "object_subrequest",
-        "sub_frame",
-        "xmlhttprequest",
-        "script",
-        "other"
-    ].filter(t => VALID_RESOURCE_TYPES.has(t))
+    types: REQUESTED_RESOURCE_TYPES.filter(isResourceType)
 };
 
 /** @type {Map<number, PageListener>} */
@@ -102,7 +110,7 @@ class PageListener {
         this.listener = this.handleRequest.bind(this);
         const filter = { tabId: this.tab.id, ...REQUESTS_FILTER };
         chrome.webRequest.onBeforeRequest.addListener(this.listener, filter);
-        this.handleRequest(this.tab);
+        this.handleRequestUrl(this.tab.url);
         this.updateStatus();
         this.interval = setInterval(this.updateStatus.bind(this), 1000);
     }
@@ -145,9 +153,18 @@ class PageListener {
     }
 
     /**
-     * @param {{url:string }} request 
+     * @param {chrome.webRequest.OnBeforeRequestDetails} details
+     * @returns {chrome.webRequest.BlockingResponse | undefined}
      */
-    handleRequest({ url }) {
+    handleRequest(details) {
+        this.handleRequestUrl(details.url);
+        return undefined;
+    }
+
+    /**
+     * @param {string} url
+     */
+    handleRequestUrl(url) {
         for (const { pattern, replacement } of META_REPLACE) {
             url = url.replace(pattern, replacement);
         }
@@ -197,8 +214,15 @@ class PageListener {
         const tabId = this.tab.id;
         chrome.browserAction.setBadgeText({ text: badge, tabId });
         chrome.browserAction.setTitle({ title, tabId });
-        const path = this.isListening() ? manifest.icons : manifest.browser_action.default_icon;
-        chrome.browserAction.setIcon({ tabId, path });
+        const path = (this.isListening()
+            ? manifest.icons || manifest.browser_action.default_icon
+            : manifest.browser_action.default_icon || manifest.icons);
+        if (path) {
+            chrome.browserAction.setIcon({
+                tabId,
+                path: /** @type {string | { [index: string]: string }} */ (path)
+            });
+        }
     }
 
     openFound() {
@@ -239,12 +263,12 @@ function sameSite(url1, url2) {
 
 
 /**
- * @returns {{browser_action:chrome.runtime.ManifestAction} & chrome.runtime.Manifest} the extension's manifest
+ * @returns {chrome.runtime.ManifestV2 & { browser_action: chrome.runtime.ManifestAction }}
  */
 function getManifest() {
-    const { browser_action, ...manifest } = chrome.runtime.getManifest();
-    if (!browser_action) throw new Error(`Invalid manifest: ${manifest}`);
-    return { browser_action, ...manifest };
+    const manifest = chrome.runtime.getManifest();
+    if (!manifest.browser_action) throw new Error(`Invalid manifest: ${manifest}`);
+    return /** @type {chrome.runtime.ManifestV2 & { browser_action: chrome.runtime.ManifestAction }} */ (manifest);
 }
 
 /**

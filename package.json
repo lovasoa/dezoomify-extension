@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/lovasoa/dezoomify-extension#readme",
   "devDependencies": {
-    "@types/chrome": "^0.0.154",
-    "typescript": "^4.3.5"
+    "@types/chrome": "^0.1.36",
+    "typescript": "^5.9.3"
   }
 }
