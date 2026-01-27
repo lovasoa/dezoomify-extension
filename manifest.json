@@ -28,5 +28,15 @@
     ],
     "background": {
         "service_worker": "background.js"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "{14074c89-8a5f-4813-98df-a7117f062871}",
+            "data_collection_permissions": {
+                "required": [
+                    "none"
+                ]
+            }
+        }
     }
 }
