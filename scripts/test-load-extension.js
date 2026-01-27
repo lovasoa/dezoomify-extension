@@ -62,16 +62,39 @@ async function testChromium() {
             document.body.appendChild(img);
         });
         await requestPromise;
-        await delay(1000);
-        const newPagePromise = context.waitForEvent("page", { timeout: 15000 });
+        const badgeReady = await worker.evaluate(async (activeTabId) => {
+            const actionApi = chrome.action || chrome.browserAction;
+            const deadline = Date.now() + 15000;
+            while (Date.now() < deadline) {
+                const badge = await new Promise((resolve) => {
+                    actionApi.getBadgeText({ tabId: activeTabId }, resolve);
+                });
+                if (badge) return true;
+                await new Promise((resolve) => setTimeout(resolve, 250));
+            }
+            return false;
+        }, tab.id);
+        if (!badgeReady) {
+            throw new Error("Extension did not detect the test request");
+        }
+        const newPagePromise = context.waitForEvent("page", { timeout: 15000 }).catch(() => null);
         await worker.evaluate((activeTab) => globalThis.click(activeTab), tab);
         const newPage = await newPagePromise;
-        await newPage.waitForLoadState("domcontentloaded");
-        const newUrl = newPage.url();
+        const pageDeadline = Date.now() + 15000;
+        let dezoomifyPage = newPage;
+        while (!dezoomifyPage && Date.now() < pageDeadline) {
+            dezoomifyPage = context.pages().find((candidate) => candidate.url().startsWith("https://dezoomify.ophir.dev/#"));
+            if (!dezoomifyPage) await delay(250);
+        }
+        if (!dezoomifyPage) {
+            throw new Error("Dezoomify tab not opened");
+        }
+        await dezoomifyPage.waitForLoadState("domcontentloaded");
+        const newUrl = dezoomifyPage.url();
         if (!newUrl.startsWith("https://dezoomify.ophir.dev/#")) {
             throw new Error("Dezoomify tab not opened");
         }
-        await newPage.close();
+        await dezoomifyPage.close();
         await page.close();
     } finally {
         await context.close();
