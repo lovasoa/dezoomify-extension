@@ -37,6 +37,42 @@ async function testChromium() {
         if (!worker.url().startsWith("chrome-extension://")) {
             throw new Error("Chrome extension service worker not detected");
         }
+        const page = await context.newPage();
+        await page.goto("https://example.com", { waitUntil: "domcontentloaded" });
+        const urlPattern = new URL(page.url()).origin + "/*";
+        const tab = await worker.evaluate(async (pattern) => {
+            return await new Promise((resolve) => {
+                chrome.tabs.query({ url: pattern }, (tabs) => {
+                    const match = tabs[0];
+                    resolve(match ? { id: match.id, url: match.url } : null);
+                });
+            });
+        }, urlPattern);
+        if (!tab || !tab.id || !tab.url) {
+            throw new Error("Active tab not found");
+        }
+        await worker.evaluate((activeTab) => globalThis.click(activeTab), tab);
+        const requestPromise = page.waitForRequest(
+            (request) => request.url().includes("/info.json"),
+            { timeout: 10000 }
+        );
+        await page.evaluate(() => {
+            const img = document.createElement("img");
+            img.src = `https://example.com/info.json?ts=${Date.now()}`;
+            document.body.appendChild(img);
+        });
+        await requestPromise;
+        await delay(1000);
+        const newPagePromise = context.waitForEvent("page", { timeout: 15000 });
+        await worker.evaluate((activeTab) => globalThis.click(activeTab), tab);
+        const newPage = await newPagePromise;
+        await newPage.waitForLoadState("domcontentloaded");
+        const newUrl = newPage.url();
+        if (!newUrl.startsWith("https://dezoomify.ophir.dev/#")) {
+            throw new Error("Dezoomify tab not opened");
+        }
+        await newPage.close();
+        await page.close();
     } finally {
         await context.close();
     }
