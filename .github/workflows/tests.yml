@@ -1,30 +1,64 @@
 name: Tests
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build extension
+        run: npm run build
+      - name: Download Firefox Nightly
+        if: matrix.name == 'firefox'
+        run: |
+          NIGHTLY_NAME=$(curl -sL https://archive.mozilla.org/pub/firefox/nightly/latest-mozilla-central/ | rg -o "firefox-[0-9.]+a1.en-US.linux-x86_64.tar.xz" | head -n 1)
+          curl -sL "https://archive.mozilla.org/pub/firefox/nightly/latest-mozilla-central/${NIGHTLY_NAME}" -o /tmp/firefox-nightly.tar.xz
+          tar -xf /tmp/firefox-nightly.tar.xz -C /tmp
+          echo "FIREFOX_BIN=/tmp/firefox/firefox" >> $GITHUB_ENV
+      - name: TypeScript checks
+        run: npm run test:types
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dezoomify.zip
+          path: ./dezoomify.zip
 
+  browser-tests:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
-
+        include:
+          - name: firefox
+            playwright: firefox
+            script: firefox
+            load: firefox
+          - name: chrome
+            playwright: chromium
+            script: chrome
+            load: chromium
     steps:
-    - uses: actions/checkout@v1
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: npm install, build, and test
-      run: |
-        npm ci
-        npm run build
-        npm test
-      env:
-        CI: true     
-    - uses: actions/upload-artifact@v1
-      with:
-        name: dezoomify.zip
-        path: ./dezoomify.zip
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build extension
+        run: npm run build
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.playwright }}
+      - name: Lint on ${{ matrix.name }}
+        run: npm run test:${{ matrix.script }}
+      - name: Load extension on ${{ matrix.name }}
+        run: xvfb-run -a npm run test:load:${{ matrix.load }}

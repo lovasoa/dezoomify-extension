@@ -31,8 +31,26 @@ const META_REPLACE = [
     { pattern: iiifpath, replacement: '/info.json' },
     { pattern: /getTilesInfo\?object_id=(.*)&callback.*/, replacement: 'getTilesInfo?object_id=$1' },
 ];
-// @ts-ignore
-const VALID_RESOURCE_TYPES = new Set(Object.values(chrome.webRequest['ResourceType']));
+/** @type {string[]} */
+const REQUESTED_RESOURCE_TYPES = [
+    "main_frame",
+    "image",
+    "object",
+    "object_subrequest",
+    "sub_frame",
+    "xmlhttprequest",
+    "script",
+    "other"
+];
+/** @type {Set<string>} */
+const VALID_RESOURCE_TYPES = new Set(
+    Object.values(chrome.webRequest.ResourceType)
+);
+/**
+ * @param {string} type
+ * @returns {type is chrome.webRequest.ResourceType}
+ */
+const isResourceType = (type) => VALID_RESOURCE_TYPES.has(type);
 
 /**
  * Selector for which requests we want to intercept
@@ -40,21 +58,13 @@ const VALID_RESOURCE_TYPES = new Set(Object.values(chrome.webRequest['ResourceTy
  */
 const REQUESTS_FILTER = {
     urls: ["<all_urls>"],
-    // @ts-ignore
-    types: [
-        "main_frame",
-        "image",
-        "object",
-        "object_subrequest",
-        "sub_frame",
-        "xmlhttprequest",
-        "script",
-        "other"
-    ].filter(t => VALID_RESOURCE_TYPES.has(t))
+    types: REQUESTED_RESOURCE_TYPES.filter(isResourceType)
 };
 
 /** @type {Map<number, PageListener>} */
 const page_listeners = new Map;
+const actionApi = chrome.action || chrome.browserAction;
+const actionContext = chrome.action ? "action" : "browser_action";
 
 /**
  * Handle a click on the extension's icon
@@ -62,7 +72,7 @@ const page_listeners = new Map;
  */
 async function click(unchecked_tab) {
     const tab = checkTab(unchecked_tab);
-    chrome.browserAction.setBadgeText({ text: '...', tabId: tab.id });
+    actionApi.setBadgeText({ text: '...', tabId: tab.id });
     const listener = page_listeners.get(tab.id);
     if (listener && listener.isListening()) {
         // Open the images that may have been found, and stop the existing listener
@@ -77,7 +87,7 @@ async function click(unchecked_tab) {
     }
 }
 
-chrome.browserAction.onClicked.addListener(click);
+actionApi.onClicked.addListener(click);
 
 // Remove page listeners when their tab is closed  
 chrome.tabs.onRemoved.addListener(tabID => {
@@ -102,9 +112,8 @@ class PageListener {
         this.listener = this.handleRequest.bind(this);
         const filter = { tabId: this.tab.id, ...REQUESTS_FILTER };
         chrome.webRequest.onBeforeRequest.addListener(this.listener, filter);
-        this.handleRequest(this.tab);
+        this.handleRequestUrl(this.tab.url);
         this.updateStatus();
-        this.interval = setInterval(this.updateStatus.bind(this), 1000);
     }
 
 
@@ -122,7 +131,6 @@ class PageListener {
      */
     stop() {
         chrome.webRequest.onBeforeRequest.removeListener(this.listener);
-        clearInterval(this.interval);
     }
 
     /**
@@ -138,16 +146,25 @@ class PageListener {
      */
     hasVisibleResults() {
         return new Promise((accept) => {
-            chrome.browserAction.getTitle({ tabId: this.tab.id }, title => {
-                accept(title !== getManifest().browser_action.default_title);
+            actionApi.getTitle({ tabId: this.tab.id }, title => {
+                accept(title !== getManifest().action.default_title);
             });
         });
     }
 
     /**
-     * @param {{url:string }} request 
+     * @param {chrome.webRequest.OnBeforeRequestDetails} details
+     * @returns {chrome.webRequest.BlockingResponse | undefined}
      */
-    handleRequest({ url }) {
+    handleRequest(details) {
+        this.handleRequestUrl(details.url);
+        return undefined;
+    }
+
+    /**
+     * @param {string} url
+     */
+    handleRequestUrl(url) {
         for (const { pattern, replacement } of META_REPLACE) {
             url = url.replace(pattern, replacement);
         }
@@ -185,7 +202,7 @@ class PageListener {
         const { host } = new URL(this.tab.url);
         if (!this.isListening()) {
             badge = '';
-            title = '' + manifest.browser_action.default_title;
+            title = '' + manifest.action.default_title;
         } else if (found === 0) {
             title = `Listening for zoomable image requests from ${host}... ` +
                 'Zoom on your image and it should be detected.';
@@ -195,10 +212,17 @@ class PageListener {
             title = `Found ${found} images on ${host}. Click to open them.`
         }
         const tabId = this.tab.id;
-        chrome.browserAction.setBadgeText({ text: badge, tabId });
-        chrome.browserAction.setTitle({ title, tabId });
-        const path = this.isListening() ? manifest.icons : manifest.browser_action.default_icon;
-        chrome.browserAction.setIcon({ tabId, path });
+        actionApi.setBadgeText({ text: badge, tabId });
+        actionApi.setTitle({ title, tabId });
+        const path = (this.isListening()
+            ? manifest.icons || manifest.action.default_icon
+            : manifest.action.default_icon || manifest.icons);
+        if (path) {
+            actionApi.setIcon({
+                tabId,
+                path: /** @type {string | { [index: string]: string }} */ (path)
+            });
+        }
     }
 
     openFound() {
@@ -239,12 +263,15 @@ function sameSite(url1, url2) {
 
 
 /**
- * @returns {{browser_action:chrome.runtime.ManifestAction} & chrome.runtime.Manifest} the extension's manifest
+ * @returns {chrome.runtime.Manifest & { action: chrome.runtime.ManifestAction }}
  */
 function getManifest() {
-    const { browser_action, ...manifest } = chrome.runtime.getManifest();
-    if (!browser_action) throw new Error(`Invalid manifest: ${manifest}`);
-    return { browser_action, ...manifest };
+    const manifest = /** @type {chrome.runtime.Manifest & { browser_action?: chrome.runtime.ManifestAction }} */ (
+        chrome.runtime.getManifest()
+    );
+    const action = manifest.action || manifest.browser_action;
+    if (!action) throw new Error(`Invalid manifest: ${manifest}`);
+    return { ...manifest, action };
 }
 
 /**
@@ -288,11 +315,22 @@ const DEFAULT_MENU_ACTIONS = [
 /**
  * Add right-click menu actions
  */
-chrome.contextMenus.removeAll();
-DEFAULT_MENU_ACTIONS.forEach(({ title, url, onclick }) => {
-    chrome.contextMenus.create({
-        title,
-        contexts: ["browser_action"],
-        onclick: onclick || (_ => chrome.tabs.create({ url, active: true, }))
+const menuHandlers = new Map();
+chrome.contextMenus.removeAll(() => {
+    DEFAULT_MENU_ACTIONS.forEach(({ title, url, onclick }, index) => {
+        const id = `dezoomify-menu-${index}`;
+        const handler = onclick || ((_info, _tab) => {
+            if (url) chrome.tabs.create({ url, active: true });
+        });
+        menuHandlers.set(id, handler);
+        chrome.contextMenus.create({
+            id,
+            title,
+            contexts: [actionContext]
+        });
     });
+});
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    const handler = menuHandlers.get(String(info.menuItemId));
+    if (handler) handler(info, tab);
 });
