@@ -63,6 +63,8 @@ const REQUESTS_FILTER = {
 
 /** @type {Map<number, PageListener>} */
 const page_listeners = new Map;
+const actionApi = chrome.action || chrome.browserAction;
+const actionContext = chrome.action ? "action" : "browser_action";
 
 /**
  * Handle a click on the extension's icon
@@ -70,7 +72,7 @@ const page_listeners = new Map;
  */
 async function click(unchecked_tab) {
     const tab = checkTab(unchecked_tab);
-    chrome.action.setBadgeText({ text: '...', tabId: tab.id });
+    actionApi.setBadgeText({ text: '...', tabId: tab.id });
     const listener = page_listeners.get(tab.id);
     if (listener && listener.isListening()) {
         // Open the images that may have been found, and stop the existing listener
@@ -85,7 +87,7 @@ async function click(unchecked_tab) {
     }
 }
 
-chrome.action.onClicked.addListener(click);
+actionApi.onClicked.addListener(click);
 
 // Remove page listeners when their tab is closed  
 chrome.tabs.onRemoved.addListener(tabID => {
@@ -144,7 +146,7 @@ class PageListener {
      */
     hasVisibleResults() {
         return new Promise((accept) => {
-            chrome.action.getTitle({ tabId: this.tab.id }, title => {
+            actionApi.getTitle({ tabId: this.tab.id }, title => {
                 accept(title !== getManifest().action.default_title);
             });
         });
@@ -210,13 +212,13 @@ class PageListener {
             title = `Found ${found} images on ${host}. Click to open them.`
         }
         const tabId = this.tab.id;
-        chrome.action.setBadgeText({ text: badge, tabId });
-        chrome.action.setTitle({ title, tabId });
+        actionApi.setBadgeText({ text: badge, tabId });
+        actionApi.setTitle({ title, tabId });
         const path = (this.isListening()
             ? manifest.icons || manifest.action.default_icon
             : manifest.action.default_icon || manifest.icons);
         if (path) {
-            chrome.action.setIcon({
+            actionApi.setIcon({
                 tabId,
                 path: /** @type {string | { [index: string]: string }} */ (path)
             });
@@ -261,12 +263,15 @@ function sameSite(url1, url2) {
 
 
 /**
- * @returns {chrome.runtime.ManifestV3 & { action: chrome.runtime.ManifestAction }}
+ * @returns {chrome.runtime.Manifest & { action: chrome.runtime.ManifestAction }}
  */
 function getManifest() {
-    const manifest = chrome.runtime.getManifest();
-    if (!manifest.action) throw new Error(`Invalid manifest: ${manifest}`);
-    return /** @type {chrome.runtime.ManifestV3 & { action: chrome.runtime.ManifestAction }} */ (manifest);
+    const manifest = /** @type {chrome.runtime.Manifest & { browser_action?: chrome.runtime.ManifestAction }} */ (
+        chrome.runtime.getManifest()
+    );
+    const action = manifest.action || manifest.browser_action;
+    if (!action) throw new Error(`Invalid manifest: ${manifest}`);
+    return { ...manifest, action };
 }
 
 /**
@@ -310,11 +315,22 @@ const DEFAULT_MENU_ACTIONS = [
 /**
  * Add right-click menu actions
  */
-chrome.contextMenus.removeAll();
-DEFAULT_MENU_ACTIONS.forEach(({ title, url, onclick }) => {
-    chrome.contextMenus.create({
-        title,
-        contexts: ["action"],
-        onclick: onclick || (_ => chrome.tabs.create({ url, active: true, }))
+const menuHandlers = new Map();
+chrome.contextMenus.removeAll(() => {
+    DEFAULT_MENU_ACTIONS.forEach(({ title, url, onclick }, index) => {
+        const id = `dezoomify-menu-${index}`;
+        const handler = onclick || ((_info, _tab) => {
+            if (url) chrome.tabs.create({ url, active: true });
+        });
+        menuHandlers.set(id, handler);
+        chrome.contextMenus.create({
+            id,
+            title,
+            contexts: [actionContext]
+        });
     });
+});
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    const handler = menuHandlers.get(String(info.menuItemId));
+    if (handler) handler(info, tab);
 });
