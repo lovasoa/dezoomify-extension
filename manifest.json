@@ -1,5 +1,5 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "Dezoomify",
     "version": "0.4.6",
     "description": "Download zoomable images from web pages",
@@ -9,8 +9,7 @@
         "128": "icons/color/icon-128.png",
         "512": "icons/color/icon-512.png"
     },
-    "browser_action": {
-        "browser_style": true,
+    "action": {
         "default_icon": {
             "24": "icons/grey/icon-24.png",
             "96": "icons/grey/icon-96.png",
@@ -22,12 +21,12 @@
     "permissions": [
         "activeTab",
         "webRequest",
-        "contextMenus",
+        "contextMenus"
+    ],
+    "host_permissions": [
         "<all_urls>"
     ],
     "background": {
-        "scripts": [
-            "background.js"
-        ]
+        "service_worker": "background.js"
     }
 }

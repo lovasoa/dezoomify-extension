@@ -70,7 +70,7 @@ const page_listeners = new Map;
  */
 async function click(unchecked_tab) {
     const tab = checkTab(unchecked_tab);
-    chrome.browserAction.setBadgeText({ text: '...', tabId: tab.id });
+    chrome.action.setBadgeText({ text: '...', tabId: tab.id });
     const listener = page_listeners.get(tab.id);
     if (listener && listener.isListening()) {
         // Open the images that may have been found, and stop the existing listener
@@ -85,7 +85,7 @@ async function click(unchecked_tab) {
     }
 }
 
-chrome.browserAction.onClicked.addListener(click);
+chrome.action.onClicked.addListener(click);
 
 // Remove page listeners when their tab is closed  
 chrome.tabs.onRemoved.addListener(tabID => {
@@ -112,7 +112,6 @@ class PageListener {
         chrome.webRequest.onBeforeRequest.addListener(this.listener, filter);
         this.handleRequestUrl(this.tab.url);
         this.updateStatus();
-        this.interval = setInterval(this.updateStatus.bind(this), 1000);
     }
 
 
@@ -130,7 +129,6 @@ class PageListener {
      */
     stop() {
         chrome.webRequest.onBeforeRequest.removeListener(this.listener);
-        clearInterval(this.interval);
     }
 
     /**
@@ -146,8 +144,8 @@ class PageListener {
      */
     hasVisibleResults() {
         return new Promise((accept) => {
-            chrome.browserAction.getTitle({ tabId: this.tab.id }, title => {
-                accept(title !== getManifest().browser_action.default_title);
+            chrome.action.getTitle({ tabId: this.tab.id }, title => {
+                accept(title !== getManifest().action.default_title);
             });
         });
     }
@@ -202,7 +200,7 @@ class PageListener {
         const { host } = new URL(this.tab.url);
         if (!this.isListening()) {
             badge = '';
-            title = '' + manifest.browser_action.default_title;
+            title = '' + manifest.action.default_title;
         } else if (found === 0) {
             title = `Listening for zoomable image requests from ${host}... ` +
                 'Zoom on your image and it should be detected.';
@@ -212,13 +210,13 @@ class PageListener {
             title = `Found ${found} images on ${host}. Click to open them.`
         }
         const tabId = this.tab.id;
-        chrome.browserAction.setBadgeText({ text: badge, tabId });
-        chrome.browserAction.setTitle({ title, tabId });
+        chrome.action.setBadgeText({ text: badge, tabId });
+        chrome.action.setTitle({ title, tabId });
         const path = (this.isListening()
-            ? manifest.icons || manifest.browser_action.default_icon
-            : manifest.browser_action.default_icon || manifest.icons);
+            ? manifest.icons || manifest.action.default_icon
+            : manifest.action.default_icon || manifest.icons);
         if (path) {
-            chrome.browserAction.setIcon({
+            chrome.action.setIcon({
                 tabId,
                 path: /** @type {string | { [index: string]: string }} */ (path)
             });
@@ -263,12 +261,12 @@ function sameSite(url1, url2) {
 
 
 /**
- * @returns {chrome.runtime.ManifestV2 & { browser_action: chrome.runtime.ManifestAction }}
+ * @returns {chrome.runtime.ManifestV3 & { action: chrome.runtime.ManifestAction }}
  */
 function getManifest() {
     const manifest = chrome.runtime.getManifest();
-    if (!manifest.browser_action) throw new Error(`Invalid manifest: ${manifest}`);
-    return /** @type {chrome.runtime.ManifestV2 & { browser_action: chrome.runtime.ManifestAction }} */ (manifest);
+    if (!manifest.action) throw new Error(`Invalid manifest: ${manifest}`);
+    return /** @type {chrome.runtime.ManifestV3 & { action: chrome.runtime.ManifestAction }} */ (manifest);
 }
 
 /**
@@ -316,7 +314,7 @@ chrome.contextMenus.removeAll();
 DEFAULT_MENU_ACTIONS.forEach(({ title, url, onclick }) => {
     chrome.contextMenus.create({
         title,
-        contexts: ["browser_action"],
+        contexts: ["action"],
         onclick: onclick || (_ => chrome.tabs.create({ url, active: true, }))
     });
 });
