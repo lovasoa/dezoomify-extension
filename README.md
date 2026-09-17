@@ -1,3 +1,7 @@
+> [!CAUTION]
+> dezoomify-extension is not maintained anymore. The new unified dezoomify v3 has its own extension, that replaces this one: https://dezoomify.ophir.dev/beta/
+
+
 # dezoomify-extension
 
 ## What does it do ?
